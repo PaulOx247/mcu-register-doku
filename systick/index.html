@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<title>SysTick Timer - MCT µC Programmierung</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+<meta name="generator" content="mkdocs-1.6.1, mkdocs-gitbook-1.0.7">
+
+<link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon">
+<meta name="HandheldFriendly" content="true"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta rel="next" href="" />
+<link href="../css/style.min.css" rel="stylesheet">
+   
+  <style>
+    /* Sidebar Branding entfernen */
+    .book-summary .poweredby,
+    .book-summary .powered-by,
+    .book-summary .copyright,
+    .book-summary-footer,
+    .book-summary .book-summary-footer {
+      display: none !important;
+    }
+  </style>
+
+</head>
+
+<body>
+<div class="book">
+<div class="book-summary">
+
+<nav role="navigation">
+<ul class="summary">
+<li>
+<a href=".." target="_blank" class="custom-link">MCT µC Programmierung</a>
+</li>
+<li class="divider"></li>
+<li class="chapter" data-path="">
+<a href="..">Start</a>
+<li class="chapter" data-path="grundlagen/">
+<a href="../grundlagen/">Grundlagen</a>
+<li class="chapter" data-path="gpio/">
+<a href="../gpio/">GPIO</a>
+<li class="chapter active" data-path="systick/">
+<a href="./">SysTick Timer</a>
+<li class="divider"></li>
+
+
+
+    <!--
+<li><a href="http://www.mkdocs.org">
+Published with MkDocs
+</a></li>
+
+<li><a href="https://github.com/GitbookIO/theme-default">
+Theme by GitBook
+</a></li>
+-->
+</ul>
+
+</nav>
+
+</div> <!-- end of book-summary -->
+
+<div class="book-body">
+<div class="body-inner">
+<div class="book-header" role="navigation">
+
+<!-- Title -->
+<h1>
+<i class="fa fa-circle-o-notch fa-spin"></i>
+<a href="." ></a>
+</h1>
+
+</div> <!-- end of book-header -->
+
+<div class="page-wrapper" tabindex="-1" role="main">
+<div class="page-inner">
+
+<section class="normal markdown-section">
+
+
+
+<h1 id="system-timer-systick-timer"><strong>System Timer – SysTick Timer</strong></h1>
+<p>Alle ARM-Cortex-M Mikrocontroller besitzen einen einfachen Systemtimer, den <strong>SysTick Timer</strong>.<br />
+Der SysTick Timer dient hauptsächlich zur <strong>zeitlichen Steuerung von Programmen</strong>, z. B. für:</p>
+<ul>
+<li>Zeitmessung</li>
+<li>periodische Interrupts</li>
+<li>einfache Delays</li>
+<li>Betriebssystem-Ticks (RTOS)</li>
+</ul>
+<hr />
+<h2 id="grundprinzip-des-systick-timers">Grundprinzip des SysTick Timers</h2>
+<p>Der SysTick Timer ist ein <strong>24-Bit-Abwärtszähler</strong>.</p>
+<ul>
+<li>Er zählt von einem Startwert (Reload-Wert) <strong>bis 0</strong></li>
+<li>Bei Erreichen von 0:</li>
+<li>wird ein <strong>Interrupt ausgelöst</strong></li>
+<li>der Zähler wird automatisch wieder mit dem Reload-Wert geladen</li>
+<li>Danach beginnt der Zählvorgang erneut</li>
+</ul>
+<p>Der SysTick Timer läuft somit <strong>periodisch</strong>.</p>
+<p><img alt="SYSTICK" src="../images/SYSTICK.png" /></p>
+<hr />
+<h2 id="taktquelle-des-systick-timers">Taktquelle des SysTick Timers</h2>
+<p>Der Takt für den SysTick Timer stammt vom <strong>Systemtakt</strong> des Mikrocontrollers.</p>
+<ul>
+<li>Der Systemtakt kann z. B. 16 MHz, 84 MHz oder bis zu 168 MHz betragen</li>
+<li>Der SysTick zählt mit dieser Taktfrequenz herunter</li>
+</ul>
+<p>Beispiel bei 16 MHz:</p>
+<pre><code class="language-text">16 000 000 Takte pro Sekunde
+→ 1 Takt = 62,5 ns
+</code></pre>
+<p>Wird der Reload-Wert auf 16 000 000 gesetzt, benötigt der Timer <strong>genau 1 Sekunde</strong>, um auf 0 herunterzuzählen.</p>
+<hr />
+<h2 id="reload-wert-und-zeitintervall">Reload-Wert und Zeitintervall</h2>
+<p>Der Reload-Wert bestimmt, <strong>nach welcher Zeit ein Interrupt ausgelöst wird</strong>.</p>
+<p>Beispiel für einen 1-ms-Tick:</p>
+<pre><code class="language-text">Systemtakt: 16 MHz
+Ticks pro Millisekunde: 16 000
+</code></pre>
+<p>Der Timer zählt dann:</p>
+<pre><code class="language-text">16 000 → 0  → Interrupt → Reload
+</code></pre>
+<p>Damit entsteht <strong>alle 1 ms ein SysTick-Interrupt</strong>.</p>
+<hr />
+<h2 id="systick-als-interruptquelle">SysTick als Interruptquelle</h2>
+<p>Beim Übergang von <code>1 → 0</code> kann der SysTick Timer einen <strong>Interrupt</strong> auslösen.<br />
+Dieser Interrupt wird in der Funktion <code>SysTick_Handler()</code> behandelt.</p>
+<p>Diese Funktion wird <strong>automatisch</strong> aufgerufen, sobald der Interrupt auftritt.</p>
+<hr />
+<h2 id="cmsis-und-systick">CMSIS und SysTick</h2>
+<p>Die Konfiguration des SysTick Timers erfolgt üblicherweise über die <strong>CMSIS-Bibliothek</strong><br />
+(Cortex Microcontroller Software Interface Standard).</p>
+<p>CMSIS stellt eine einfache Funktion zur Verfügung:</p>
+<pre><code class="language-c">uint32_t SysTick_Config(uint32_t ticks);
+</code></pre>
+<p>Diese Funktion:
+- setzt den Reload-Wert
+- startet den SysTick Timer
+- aktiviert den SysTick-Interrupt</p>
+<hr />
+<h2 id="systick_config-funktionsprinzip">SysTick_Config – Funktionsprinzip</h2>
+<pre><code class="language-c">SysTick_Config(SystemCoreClock / 1000);
+</code></pre>
+<p>Erklärung:
+- <code>SystemCoreClock</code> enthält die aktuelle Systemtaktfrequenz
+- Division durch 1000 ergibt die Anzahl der Takte für <strong>1 ms</strong>
+- Der SysTick Interrupt wird damit <strong>alle 1 ms ausgelöst</strong></p>
+<hr />
+<h2 id="beispiel-zeitmessung-mit-systick">Beispiel: Zeitmessung mit SysTick</h2>
+<p>Im Unterricht wurde der SysTick verwendet, um eine <strong>Millisekunden-Zeitbasis</strong> zu erzeugen.</p>
+<hr />
+<h3 id="globale-variable">Globale Variable</h3>
+<pre><code class="language-c">volatile uint32_t msTicks;   // zählt die Millisekunden
+</code></pre>
+<ul>
+<li><code>volatile</code>, da die Variable im Interrupt verändert wird</li>
+<li><code>msTicks</code> zählt die Anzahl der SysTick-Interrupts</li>
+</ul>
+<hr />
+<h3 id="systick-interrupt-handler">SysTick Interrupt Handler</h3>
+<pre><code class="language-c">void SysTick_Handler(void)
+{
+    msTicks++;
+}
+</code></pre>
+<p>Ablauf:
+- Der SysTick Timer erreicht 0
+- Interrupt wird ausgelöst
+- <code>SysTick_Handler()</code> wird aufgerufen
+- Zähler <code>msTicks</code> wird um 1 erhöht</p>
+<p>Da der Interrupt alle 1 ms kommt, entspricht <code>msTicks</code> einer Millisekunden-Zeitbasis.</p>
+<hr />
+<h2 id="initialisierung-des-systick-timers">Initialisierung des SysTick Timers</h2>
+<pre><code class="language-c">void Init(void)
+{
+    RCC-&gt;AHB1ENR |= (1 &lt;&lt; 3);      // GPIOD aktivieren
+    GPIOD-&gt;MODER |= (1 &lt;&lt; 24);     // PD12 als Ausgang
+
+    SysTick_Config(SystemCoreClock / 1000);   // Interrupt alle 1 ms
+}
+</code></pre>
+<ul>
+<li>GPIO wird initialisiert</li>
+<li>SysTick Timer wird gestartet</li>
+<li>Ab jetzt läuft der SysTick Interrupt regelmäßig</li>
+</ul>
+<hr />
+<h2 id="delay-funktion-mit-systick">Delay-Funktion mit SysTick</h2>
+<p>Mit dem SysTick-Zähler kann eine einfache Delay-Funktion realisiert werden.</p>
+<pre><code class="language-c">void Delay(uint32_t dlyTicks)
+{
+    msTicks = 0;
+    while (msTicks &lt; dlyTicks)
+    {
+        // warten
+    }
+}
+</code></pre>
+<p>Funktionsweise:
+1. <code>msTicks</code> wird auf 0 gesetzt
+2. Der SysTick Interrupt erhöht <code>msTicks</code> jede Millisekunde
+3. Sobald <code>msTicks</code> den gewünschten Wert erreicht, endet die Schleife</p>
+<hr />
+<h2 id="beispiel-led-blinken-mit-systick">Beispiel: LED blinken mit SysTick</h2>
+<pre><code class="language-c">while (1)
+{
+    GPIOD-&gt;ODR |=  (1 &lt;&lt; 12);   // LED an
+    Delay(500);
+
+    GPIOD-&gt;ODR &amp;= ~(1 &lt;&lt; 12);   // LED aus
+    Delay(500);
+}
+</code></pre>
+<ul>
+<li>LED an für 500 ms</li>
+<li>LED aus für 500 ms</li>
+<li>Blinkfrequenz: 1 Hz</li>
+</ul>
+<hr />
+<h2 id="zusammenfassung">Zusammenfassung</h2>
+<ul>
+<li>SysTick ist ein <strong>24-Bit-Abwärtszähler</strong></li>
+<li>Er erzeugt <strong>periodische Interrupts</strong></li>
+<li>Die Zeitbasis wird über den Reload-Wert bestimmt</li>
+<li>Mit CMSIS kann der SysTick sehr einfach konfiguriert werden</li>
+<li>SysTick eignet sich ideal für einfache Zeitmessungen und Delays</li>
+</ul>
+<h2 id="beispielprojekt-blinkende-led-mit-systick-schritt-fur-schritt">Beispielprojekt: Blinkende LED mit SysTick (Schritt für Schritt)</h2>
+<p>Ziel: Eine LED soll im Abstand von 500 ms ein- und ausgeschaltet werden.<br />
+Dazu konfigurieren wir SysTick so, dass er <strong>alle 1 ms</strong> einen Interrupt auslöst.<br />
+Im Interrupt wird ein Millisekunden-Zähler hochgezählt. Dieser Zähler wird dann für Delays genutzt.</p>
+<hr />
+<h3 id="schritt-1-globale-millisekundenvariable-anlegen">Schritt 1: Globale Millisekundenvariable anlegen</h3>
+<pre><code class="language-c">#include &lt;stm32f4xx.h&gt;
+
+volatile uint32_t msTicks = 0;   // zählt Millisekunden
+</code></pre>
+<p>Warum <code>volatile</code><br />
+Die Variable wird im Interrupt verändert. Ohne <code>volatile</code> könnte der Compiler Optimierungen machen und die Variable im Hauptprogramm nicht korrekt aktualisieren.</p>
+<hr />
+<h3 id="schritt-2-systick-interrupt-handler-schreiben">Schritt 2: SysTick Interrupt Handler schreiben</h3>
+<pre><code class="language-c">void SysTick_Handler(void)
+{
+    msTicks++;   // wird alle 1 ms erhöht
+}
+</code></pre>
+<p>Was passiert hier<br />
+- SysTick zählt vom Reload-Wert herunter bis 0<br />
+- bei 0 löst SysTick einen Interrupt aus<br />
+- <code>SysTick_Handler()</code> wird automatisch aufgerufen<br />
+- <code>msTicks</code> steigt dadurch jede Millisekunde um 1</p>
+<hr />
+<h3 id="schritt-3-delay-funktion-auf-basis-von-msticks">Schritt 3: Delay-Funktion auf Basis von msTicks</h3>
+<pre><code class="language-c">void Delay(uint32_t dlyTicks)
+{
+    msTicks = 0;
+    while (msTicks &lt; dlyTicks)
+    {
+        // warten, bis dlyTicks Millisekunden vergangen sind
+    }
+}
+</code></pre>
+<p>Wie das Delay funktioniert<br />
+- <code>msTicks</code> startet bei 0<br />
+- der SysTick Interrupt erhöht <code>msTicks</code> alle 1 ms<br />
+- sobald <code>msTicks</code> den gewünschten Wert erreicht, ist die Zeit abgelaufen</p>
+<hr />
+<h3 id="schritt-4-gpio-fur-die-led-initialisieren">Schritt 4: GPIO für die LED initialisieren</h3>
+<p>Beispiel: LED an <strong>PD12</strong> (STM32F4 Discovery typisch)</p>
+<pre><code class="language-c">RCC-&gt;AHB1ENR |= (1 &lt;&lt; 3);         // GPIOD Takt aktivieren
+GPIOD-&gt;MODER &amp;= ~(3 &lt;&lt; (12 * 2)); // Bits löschen
+GPIOD-&gt;MODER |=  (1 &lt;&lt; (12 * 2)); // 01 = Output
+</code></pre>
+<p>Wichtig<br />
+Ohne RCC-Aktivierung reagieren die GPIO-Register nicht.</p>
+<hr />
+<h3 id="schritt-5-systick-auf-1-ms-konfigurieren">Schritt 5: SysTick auf 1 ms konfigurieren</h3>
+<pre><code class="language-c">SysTick_Config(SystemCoreClock / 1000);
+</code></pre>
+<p>Was <code>SysTick_Config()</code> intern bewirkt<br />
+- Reload-Wert wird gesetzt (LOAD)<br />
+- aktueller Zähler wird zurückgesetzt (VAL)<br />
+- SysTick wird gestartet (CTRL)<br />
+- SysTick-Interrupt wird aktiviert (CTRL)</p>
+<p>Warum <code>/ 1000</code><br />
+- <code>SystemCoreClock</code> ist Takte pro Sekunde<br />
+- geteilt durch 1000 ergibt Takte pro Millisekunde<br />
+- Ergebnis: Interrupt alle 1 ms</p>
+<hr />
+<h3 id="schritt-6-hauptprogramm-mit-blink-loop">Schritt 6: Hauptprogramm mit Blink-Loop</h3>
+<pre><code class="language-c">int main(void)
+{
+    RCC-&gt;AHB1ENR |= (1 &lt;&lt; 3);         // GPIOD Takt aktivieren
+    GPIOD-&gt;MODER &amp;= ~(3 &lt;&lt; (12 * 2)); // Bits löschen
+    GPIOD-&gt;MODER |=  (1 &lt;&lt; (12 * 2)); // 01 = Output
+
+    SysTick_Config(SystemCoreClock / 1000);
+
+    while (1)
+    {
+        GPIOD-&gt;ODR |=  (1 &lt;&lt; 12);   // LED an
+        Delay(500);                // 500 ms warten
+
+        GPIOD-&gt;ODR &amp;= ~(1 &lt;&lt; 12);   // LED aus
+        Delay(500);                // 500 ms warten
+    }
+}
+</code></pre>
+<hr />
+<h2 id="was-passiert-dabei-zeitlich">Was passiert dabei zeitlich?</h2>
+<h3 id="1-systick-lauft-permanent-im-hintergrund">1) SysTick läuft permanent im Hintergrund</h3>
+<ul>
+<li>SysTick zählt alle CPU-Takte herunter  </li>
+<li>sobald 0 erreicht wird  </li>
+<li>Interrupt</li>
+<li>Reload</li>
+<li>weiter zählen</li>
+</ul>
+<h3 id="2-jede-millisekunde-passiert-automatisch">2) Jede Millisekunde passiert automatisch</h3>
+<ul>
+<li><code>SysTick_Handler()</code> läuft</li>
+<li><code>msTicks++</code></li>
+</ul>
+<h3 id="3-delay-nutzt-nur-den-zahler">3) Delay nutzt nur den Zähler</h3>
+<ul>
+<li><code>Delay(500)</code> wartet, bis <code>msTicks</code> den Wert 500 erreicht</li>
+<li>das entspricht 500 Interrupts</li>
+<li>also 500 ms</li>
+</ul>
+
+
+</section>
+
+</div> <!-- end of page-inner -->
+</div> <!-- end of page-wrapper -->
+
+</div> <!-- end of body-inner -->
+
+</div> <!-- end of book-body -->
+<script src="../js/main.js"></script>
+<script src="../js/gitbook.min.js"></script>
+<script src="../js/theme.min.js"></script>
+</body>
+</html>

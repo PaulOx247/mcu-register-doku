@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<title>Grundlagen - MCT µC Programmierung</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+<meta name="generator" content="mkdocs-1.6.1, mkdocs-gitbook-1.0.7">
+
+<link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon">
+<meta name="HandheldFriendly" content="true"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta rel="next" href="" />
+<link href="../css/style.min.css" rel="stylesheet">
+   
+  <style>
+    /* Sidebar Branding entfernen */
+    .book-summary .poweredby,
+    .book-summary .powered-by,
+    .book-summary .copyright,
+    .book-summary-footer,
+    .book-summary .book-summary-footer {
+      display: none !important;
+    }
+  </style>
+
+</head>
+
+<body>
+<div class="book">
+<div class="book-summary">
+
+<nav role="navigation">
+<ul class="summary">
+<li>
+<a href=".." target="_blank" class="custom-link">MCT µC Programmierung</a>
+</li>
+<li class="divider"></li>
+<li class="chapter" data-path="">
+<a href="..">Start</a>
+<li class="chapter active" data-path="grundlagen/">
+<a href="./">Grundlagen</a>
+<li class="chapter" data-path="gpio/">
+<a href="../gpio/">GPIO</a>
+<li class="chapter" data-path="systick/">
+<a href="../systick/">SysTick Timer</a>
+<li class="divider"></li>
+
+
+
+    <!--
+<li><a href="http://www.mkdocs.org">
+Published with MkDocs
+</a></li>
+
+<li><a href="https://github.com/GitbookIO/theme-default">
+Theme by GitBook
+</a></li>
+-->
+</ul>
+
+</nav>
+
+</div> <!-- end of book-summary -->
+
+<div class="book-body">
+<div class="body-inner">
+<div class="book-header" role="navigation">
+
+<!-- Title -->
+<h1>
+<i class="fa fa-circle-o-notch fa-spin"></i>
+<a href="." ></a>
+</h1>
+
+</div> <!-- end of book-header -->
+
+<div class="page-wrapper" tabindex="-1" role="main">
+<div class="page-inner">
+
+<section class="normal markdown-section">
+
+
+
+<h1 id="grundlagen-registerprogrammierung">Grundlagen: Registerprogrammierung</h1>
+<h2 id="was-ist-ein-mikrocontroller-und-wie-wird-er-gesteuert">Was ist ein Mikrocontroller und wie wird er gesteuert?</h2>
+<p>Ein Mikrocontroller (µC) ist ein kleiner Computer auf einem Chip.<br />
+Er enthält einen Prozessor, Speicher und verschiedene Ein- und Ausgänge, mit denen er mit der Außenwelt kommunizieren kann, z. B. um Sensoren auszulesen oder LEDs einzuschalten.</p>
+<p>Im Gegensatz zu einem normalen PC ist ein Mikrocontroller sehr spezialisiert und wird oft in Geräten wie Steuerungen, Messsystemen oder Autos eingesetzt.</p>
+<p>Damit der Mikrocontroller weiß, was er tun soll, wird er programmiert.<br />
+Die inneren Funktionen des Mikrocontrollers werden über sogenannte Register gesteuert.</p>
+<hr />
+<h2 id="was-ist-ein-register">Was ist ein Register?</h2>
+<p>Ein Register ist ein kleiner Speicherbereich im Mikrocontroller, mit dem direkt die Hardware gesteuert wird.<br />
+Man kann sich ein Register wie eine Reihe von Ein- und Aus-Schaltern (Bits) vorstellen.</p>
+<p>Ein Bit ist entweder 0 oder 1:</p>
+<ul>
+<li>0 = Funktion aus / deaktiviert  </li>
+<li>1 = Funktion an / aktiviert  </li>
+</ul>
+<hr />
+<h2 id="aufbau-eines-registers">Aufbau eines Registers</h2>
+<p>Die meisten Mikrocontroller verwenden 32-Bit-Register, also 32 einzelne Bits (Schalter) nebeneinander:</p>
+<pre><code class="language-text">01010101 01010101 01010101 01010101
+</code></pre>
+<p>In diesem Beispiel ist jedes zweite Bit auf 1 gesetzt, also aktiv, und die anderen Bits sind 0, also deaktiviert.</p>
+<p>Ein Register ist somit nichts anderes als eine Aneinanderreihung von 0 und 1, wobei jedes Bit eine bestimmte Funktion ein- oder ausschalten kann.</p>
+<p>Um zu verstehen, welches Register welche Funktion steuert und welche Bedeutung die einzelnen Bits haben, stellt der Hersteller des Mikrocontrollers Tabellen (Registerbeschreibungen) in der Dokumentation bereit.<br />
+Dort ist genau aufgeführt, wofür das Register genutzt wird und welche Funktion ein bestimmtes Bit besitzt.</p>
+<hr />
+<h2 id="beispiel-ospeedr-register">Beispiel: OSPEEDR-Register</h2>
+<p>Im folgenden Beispiel sehen wir das OSPEEDR-Register, in dem die Geschwindigkeit (Output Speed) der GPIO-Leitungen eingestellt werden kann.<br />
+Dieses Register wurde nur exemplarisch verwendet.</p>
+<p><img alt="OSPEEDR Registerübersicht" src="../images/ospeedr_register.png" /></p>
+<p>Man erkennt, dass es 32 Bit-Felder gibt, in die Werte eingetragen werden können.<br />
+Die als „rw“ (read/write) gekennzeichneten Bits können sowohl gelesen als auch beschrieben werden.</p>
+<p>In diesem Register gehören jeweils zwei Bits zu einem GPIO-Pin und legen gemeinsam die Ausgangsgeschwindigkeit fest.</p>
+<p>Wenn wir die Geschwindigkeit von Pin 5 auf „Fast“ einstellen möchten, müssen die Bits 10 und 11 des Registers geändert werden.</p>
+<p>Für den Modus „Fast“ muss eine 1 in das höherwertige Bit und eine 0 in das niederwertige Bit eingetragen werden.</p>
+<p>Registerzustand (angenommen, alle Bits waren zuvor auf 0 gesetzt):</p>
+<pre><code class="language-text">Davor:   00000000 00000000 00000000 00000000
+Danach:  00000000 00000000 00001000 00000000
+</code></pre>
+<p>Die 0 bleibt unverändert, die 1 wurde an der richtigen Bitposition gesetzt.<br />
+Der Mikrocontroller hat damit für Pin 5 die Geschwindigkeit „Fast“ eingestellt, während alle anderen Pins weiterhin mit Low-Speed betrieben werden.</p>
+<p>Beispiel:<br />
+Für Pin 12 wurden Bit 24 und Bit 25 auf 1 gesetzt, damit der Mikrocontroller diesen GPIO-Pin im High-Speed-Modus betreibt.<br />
+Alle anderen Bits bleiben unverändert.</p>
+<pre><code class="language-text">Davor:   00000000 00000000 00000000 00000000
+Danach:  00000011 00000000 00000000 00000000
+</code></pre>
+<hr />
+<h2 id="umsetzung-im-code-register-richtig-bearbeiten">Umsetzung im Code – Register richtig bearbeiten</h2>
+<p>Um Einstellungen im Mikrocontroller vorzunehmen, müssen wir die Register per Code verändern.</p>
+<hr />
+<h3 id="variante-1-register-komplett-uberschreiben">Variante 1: Register komplett überschreiben</h3>
+<p>Mit folgendem Code überschreiben wir das komplette Register und alle Inhalte, die in diesem Register aktuell stehen:</p>
+<pre><code class="language-c">GPIOA-&gt;OSPEEDR = 0b00000000000000000000100000000000;
+</code></pre>
+<p>Dies bringt den Nachteil mit sich, dass zuvor gesetzte Bits an anderen Stellen wieder mit 0 überschrieben werden.<br />
+Diese Methode ist daher in der Praxis nicht sinnvoll.</p>
+<hr />
+<h3 id="variante-2-einzelne-bits-gezielt-andern">Variante 2: Einzelne Bits gezielt ändern</h3>
+<p>Während beim direkten Überschreiben eines Registers der gesamte Inhalt ersetzt wird, kann man mit bitweisem ODER (<code>|</code>) gezielt einzelne Bits aktivieren, ohne die anderen zu verändern.</p>
+<p>Für das Beispiel betrachten wir ein vereinfachtes Register mit 8 Bit:</p>
+<pre><code class="language-text">XXXX XXXX
+</code></pre>
+<p><code>X</code> steht hierbei für einen unbekannten Wert, der bereits im Register steht.</p>
+<p>Nun soll an der dritten Stelle (Bit 2) eine 1 geschrieben werden.<br />
+Dazu wird das bestehende Register mit einer Bitmaske verodert.</p>
+<p><img alt="XOR" src="../images/OR.png" /></p>
+<p>Egal welcher Wert zuvor an den Stellen <code>X</code> stand, eine Veroderung mit 0 verändert den Wert nicht.<br />
+An der Stelle, an der mit einer 1 verodert wird, entsteht unabhängig vom vorherigen Wert immer eine 1.</p>
+<p>Eine Veroderung eignet sich daher, um gezielt einzelne Bits auf 1 zu setzen.</p>
+<p><img alt="XAND" src="../images/AND.png" /></p>
+<p>Soll ein Bit auf 0 gesetzt werden, muss eine bitweise UND-Verknüpfung verwendet werden.</p>
+<hr />
+<h3 id="umsetzung-im-code">Umsetzung im Code</h3>
+<pre><code class="language-c">register = register | 0b00000100;    // Bit 2 setzen (ODER)
+register = register &amp; 0b11111011;    // Bit 2 löschen (UND)
+</code></pre>
+<p>Kurzform:</p>
+<pre><code class="language-c">register |= 0b00000100;
+register &amp;= 0b11111011;
+</code></pre>
+<hr />
+<h2 id="vereinfachung-durch-bitweise-verschiebung">Vereinfachung durch bitweise Verschiebung</h2>
+<p>Um den Code übersichtlicher zu gestalten, muss die Bitmaske nicht vollständig ausgeschrieben werden.<br />
+Stattdessen kann sie durch eine bitweise Linksverschiebung erzeugt werden.</p>
+<pre><code class="language-text">1        = 00000001
+1 &lt;&lt; 2   = 00000100
+</code></pre>
+<p>Die Schreibweise <code>1 &lt;&lt; n</code> bedeutet, dass die 1 um <code>n</code> Stellen nach links verschoben wird und genau an der gewünschten Bitposition steht.</p>
+<hr />
+<h2 id="anwendung-im-code">Anwendung im Code</h2>
+<p>Bit setzen (auf 1 schreiben):</p>
+<pre><code class="language-c">REGISTER |= (1 &lt;&lt; 2);
+</code></pre>
+<p>Bit löschen (auf 0 setzen):</p>
+<pre><code class="language-c">REGISTER &amp;= ~(1 &lt;&lt; 2);
+</code></pre>
+<p>Der Operator <code>~</code> negiert alle Bits der Maske.<br />
+Aus <code>00000100</code> wird <code>11111011</code>, wodurch das gewünschte Bit sicher auf 0 gesetzt wird.</p>
+
+
+</section>
+
+</div> <!-- end of page-inner -->
+</div> <!-- end of page-wrapper -->
+
+</div> <!-- end of body-inner -->
+
+</div> <!-- end of book-body -->
+<script src="../js/main.js"></script>
+<script src="../js/gitbook.min.js"></script>
+<script src="../js/theme.min.js"></script>
+</body>
+</html>

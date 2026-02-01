@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<title>GPIO - MCT µC Programmierung</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+<meta name="generator" content="mkdocs-1.6.1, mkdocs-gitbook-1.0.7">
+
+<link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon">
+<meta name="HandheldFriendly" content="true"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta rel="next" href="" />
+<link href="../css/style.min.css" rel="stylesheet">
+   
+  <style>
+    /* Sidebar Branding entfernen */
+    .book-summary .poweredby,
+    .book-summary .powered-by,
+    .book-summary .copyright,
+    .book-summary-footer,
+    .book-summary .book-summary-footer {
+      display: none !important;
+    }
+  </style>
+
+</head>
+
+<body>
+<div class="book">
+<div class="book-summary">
+
+<nav role="navigation">
+<ul class="summary">
+<li>
+<a href=".." target="_blank" class="custom-link">MCT µC Programmierung</a>
+</li>
+<li class="divider"></li>
+<li class="chapter" data-path="">
+<a href="..">Start</a>
+<li class="chapter" data-path="grundlagen/">
+<a href="../grundlagen/">Grundlagen</a>
+<li class="chapter active" data-path="gpio/">
+<a href="./">GPIO</a>
+<li class="chapter" data-path="systick/">
+<a href="../systick/">SysTick Timer</a>
+<li class="divider"></li>
+
+
+
+    <!--
+<li><a href="http://www.mkdocs.org">
+Published with MkDocs
+</a></li>
+
+<li><a href="https://github.com/GitbookIO/theme-default">
+Theme by GitBook
+</a></li>
+-->
+</ul>
+
+</nav>
+
+</div> <!-- end of book-summary -->
+
+<div class="book-body">
+<div class="body-inner">
+<div class="book-header" role="navigation">
+
+<!-- Title -->
+<h1>
+<i class="fa fa-circle-o-notch fa-spin"></i>
+<a href="." ></a>
+</h1>
+
+</div> <!-- end of book-header -->
+
+<div class="page-wrapper" tabindex="-1" role="main">
+<div class="page-inner">
+
+<section class="normal markdown-section">
+
+
+
+<h1 id="gpio-general-purpose-input-output">GPIO – General Purpose Input / Output</h1>
+<p>Bevor GPIO-Pins konfiguriert oder verwendet werden können, muss die zugehörige Hardwareeinheit im Mikrocontroller aktiviert werden. Dies erfolgt über das RCC-Register.</p>
+<hr />
+<h2 id="rcc-register-aktivierung-der-gpio-hardware">RCC-Register – Aktivierung der GPIO-Hardware</h2>
+<p>Das RCC-Register (Reset and Clock Control) steuert unter anderem die Taktversorgung interner Peripherieeinheiten.<br />
+Eine Peripherieeinheit muss immer zuerst im RCC aktiviert werden, bevor ihre Register beschrieben oder gelesen werden können.</p>
+<p>Für GPIO-Ports geschieht dies über das Register <code>RCC_AHB1ENR</code>.
+<img alt="RCC_AHB1" src="../images/RCC_AHB1.png" /></p>
+<h3 id="beispiel-gpioa-aktivieren">Beispiel: GPIOA aktivieren</h3>
+<pre><code class="language-c">RCC-&gt;AHB1ENR |= (1 &lt;&lt; 0);   // GPIOA aktivieren
+</code></pre>
+<p>Wird der GPIO-Port nicht aktiviert, haben Zugriffe auf die GPIO-Register keine Wirkung.</p>
+<p>Optional kann die Peripherie auch wieder deaktiviert werden:</p>
+<pre><code class="language-c">RCC-&gt;AHB1ENR &amp;= ~(1 &lt;&lt; 0);  // GPIOA deaktivieren
+</code></pre>
+<hr />
+<h2 id="gpio-allgemeines">GPIO – Allgemeines</h2>
+<p>Über GPIO-Pins (General Purpose Input/Output) kann der Mikrocontroller mit externen Bauteilen kommunizieren.<br />
+GPIO-Pins dienen als universelle digitale Ein- und Ausgänge.</p>
+<p>Ein GPIO-Pin kann beispielsweise:
+- als <strong>Eingang (INPUT)</strong> konfiguriert werden, um externe Signale einzulesen
+- als <strong>Ausgang (OUTPUT)</strong> konfiguriert werden, um Signale auszugeben (z. B. LEDs schalten)</p>
+<p>Damit der Mikrocontroller weiß, wie ein GPIO-Pin verwendet werden soll, muss dieser zunächst über entsprechende Register konfiguriert werden.</p>
+<hr />
+<h2 id="gpio-register-uberblick">GPIO-Register – Überblick</h2>
+<p>Für die Konfiguration und Nutzung der GPIO-Pins stehen mehrere Register zur Verfügung:</p>
+<ul>
+<li><strong>MODER</strong> – legt die Betriebsart eines Pins fest  </li>
+<li><strong>ODR</strong> – setzt den Ausgangspegel eines Pins  </li>
+<li><strong>IDR</strong> – liest den aktuellen Eingangszustand eines Pins  </li>
+<li><strong>PUPDR</strong> – aktiviert interne Pull-Up- oder Pull-Down-Widerstände  </li>
+</ul>
+<p>Jeder GPIO-Port (z. B. GPIOA, GPIOB, …) besitzt seine eigenen Register.</p>
+<hr />
+<h2 id="moder-register-betriebsart-eines-pins">MODER-Register – Betriebsart eines Pins</h2>
+<p>Die Betriebsart eines GPIO-Pins wird im <code>GPIOx_MODER</code>-Register eingestellt.</p>
+<p><img alt="GPIOx_MODER" src="../images/GPIOx_MODER.png" /></p>
+<p>Für <strong>jeden Pin werden zwei Bits</strong> verwendet.<br />
+Die Kombination dieser beiden Bits legt fest, wie der Pin arbeitet.</p>
+<table>
+<thead>
+<tr>
+<th>Modus</th>
+<th>Bitwert</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Eingang</td>
+<td>00</td>
+</tr>
+<tr>
+<td>Ausgang</td>
+<td>01</td>
+</tr>
+</tbody>
+</table>
+<p>Hinweis:<br />
+Nach einem Reset sind alle GPIO-Pins standardmäßig als Eingang konfiguriert. (Ausnahme: Port B, siehe Reset Value)</p>
+<hr />
+<h3 id="beispiel-gpioa-pin-5-konfigurieren">Beispiel: GPIOA Pin 5 konfigurieren</h3>
+<p>PA5 verwendet die Bits <strong>10 und 11</strong> im MODER-Register.</p>
+<h4 id="pa5-als-ausgang-konfigurieren">PA5 als Ausgang konfigurieren</h4>
+<pre><code class="language-c">GPIOA-&gt;MODER |= (1 &lt;&lt; (5 * 2));    // Bitmuster 01
+</code></pre>
+<h4 id="pa5-als-eingang-konfigurieren">PA5 als Eingang konfigurieren</h4>
+<pre><code class="language-c">GPIOA-&gt;MODER &amp;= ~(3 &lt;&lt; (5 * 2));   // beide Bits auf 0 setzen
+</code></pre>
+<p>Die Zahl <code>3</code> entspricht dem Binärwert <code>11</code> und löscht beide Bits des Pins.</p>
+<hr />
+<h2 id="gpio-pin-verwenden">GPIO-Pin verwenden</h2>
+<p>Nachdem die Betriebsart eines GPIO-Pins festgelegt wurde, kann der Pin aktiv genutzt werden.</p>
+<p>Je nach Konfiguration erfolgt der Zugriff über unterschiedliche Register.</p>
+<hr />
+<h2 id="output-data-register-odr">Output Data Register (ODR)</h2>
+<p>Das <code>GPIOx_ODR</code>-Register steuert den Ausgangszustand eines Pins.</p>
+<ul>
+<li>1 = Pin auf High  </li>
+<li>0 = Pin auf Low  </li>
+</ul>
+<p><img alt="ODR" src="../images/ODR.png" /></p>
+<h3 id="beispiel-pa5-ansteuern">Beispiel: PA5 ansteuern</h3>
+<pre><code class="language-c">GPIOA-&gt;ODR |=  (1 &lt;&lt; 5);   // PA5 auf High setzen
+GPIOA-&gt;ODR &amp;= ~(1 &lt;&lt; 5);   // PA5 auf Low setzen
+</code></pre>
+<hr />
+<h2 id="input-data-register-idr">Input Data Register (IDR)</h2>
+<p>Über das <code>GPIOx_IDR</code>-Register wird der aktuelle Pegel eines GPIO-Pins gelesen.</p>
+<ul>
+<li>1 → Am Pin liegt High an  </li>
+<li>0 → Am Pin liegt Low an  </li>
+</ul>
+<p>Da das IDR-Register mehrere Pins gleichzeitig enthält, wird beim Auslesen eine <strong>Bitmaske</strong> verwendet, um genau den gewünschten Pin zu prüfen.</p>
+<p><img alt="IDR" src="../images/IDR.png" /></p>
+<hr />
+<h3 id="bitmaske-beim-einlesen-eines-pins">Bitmaske beim Einlesen eines Pins</h3>
+<p>Die Bitmaske wird mit einer Linksverschiebung erzeugt:</p>
+<pre><code class="language-text">1 &lt;&lt; 5   = 00000000 00000000 00000000 00100000
+</code></pre>
+<p>Diese Maske besitzt genau an der Stelle des gewünschten Pins eine 1, alle anderen Bits sind 0.</p>
+<p>Durch eine bitweise UND-Verknüpfung mit dem IDR-Register bleiben nur die Informationen dieses Pins erhalten.</p>
+<hr />
+<h3 id="beispiel-pa5-einlesen">Beispiel: PA5 einlesen</h3>
+<pre><code class="language-c">if (GPIOA-&gt;IDR &amp; (1 &lt;&lt; 5)) {
+    // PA5 ist High
+}
+</code></pre>
+<p>Ablauf:
+1. Das komplette IDR-Register wird gelesen<br />
+2. Die Bitmaske <code>(1 &lt;&lt; 5)</code> filtert alle anderen Pins heraus<br />
+3. Ist das Ergebnis ungleich 0, liegt an PA5 ein High-Pegel an  </p>
+<hr />
+<h3 id="beispiel-pa5-auf-low-prufen">Beispiel: PA5 auf Low prüfen</h3>
+<pre><code class="language-c">if (!(GPIOA-&gt;IDR &amp; (1 &lt;&lt; 5))) {
+    // PA5 ist Low
+}
+</code></pre>
+<p>Hier wird das Ergebnis der UND-Verknüpfung logisch invertiert:</p>
+<ul>
+<li><code>&amp;</code>  = bitweises UND  </li>
+<li><code>!</code>  = logische Verneinung  </li>
+<li><code>1 &lt;&lt; n</code> = Bitmaske für Pin n  </li>
+</ul>
+<p>Ist das Ergebnis 0, liegt am Pin ein Low-Pegel an.</p>
+<hr />
+<h2 id="pull-up-pull-down-widerstande">Pull-Up / Pull-Down Widerstände</h2>
+<p>Wird ein GPIO-Pin als <strong>Eingang</strong> verwendet, liest der Mikrocontroller lediglich den anliegenden elektrischen Pegel.<br />
+Ist der Pin jedoch nicht aktiv mit einer Spannung verbunden, hat er <strong>keinen definierten Zustand</strong>.</p>
+<p>Ein solcher Eingang wird als <strong>floating</strong> bezeichnet.<br />
+Ein floating Pin kann zufällig zwischen High und Low wechseln und dadurch falsche Zustände liefern.</p>
+<hr />
+<h3 id="warum-pull-widerstande-notwendig-sind">Warum Pull-Widerstände notwendig sind</h3>
+<p>Betrachten wir einen Taster, der beim Drücken den GPIO-Pin mit der Versorgungsspannung verbindet:</p>
+<ul>
+<li>
+<p><strong>Taster gedrückt</strong><br />
+  Der Pin ist direkt mit VCC verbunden → High</p>
+</li>
+<li>
+<p><strong>Taster nicht gedrückt</strong><br />
+  Der Pin ist elektrisch offen → undefinierter Zustand</p>
+</li>
+</ul>
+<p>Ohne weitere Maßnahme weiß der Mikrocontroller in diesem Zustand nicht, ob der Pin als 0 oder 1 interpretiert werden soll.</p>
+<hr />
+<h3 id="funktionsprinzip-von-pull-up-und-pull-down">Funktionsprinzip von Pull-Up und Pull-Down</h3>
+<p>Pull-Widerstände verbinden den GPIO-Pin <strong>schwach</strong> mit einem festen Pegel:</p>
+<ul>
+<li><strong>Pull-Up</strong> verbindet den Pin über einen Widerstand mit VCC  </li>
+<li><strong>Pull-Down</strong> verbindet den Pin über einen Widerstand mit GND  </li>
+</ul>
+<p>Der Widerstand ist dabei so groß gewählt, dass:
+- der Pegel im Ruhezustand eindeutig ist
+- ein externer Schalter oder Sensor den Pegel problemlos überschreiben kann</p>
+<hr />
+<h3 id="typische-anwendung">Typische Anwendung</h3>
+<ul>
+<li><strong>Pull-Down</strong>  </li>
+<li>Ruhezustand: Low  </li>
+<li>
+<p>Taster gedrückt: High  </p>
+</li>
+<li>
+<p><strong>Pull-Up</strong>  </p>
+</li>
+<li>Ruhezustand: High  </li>
+<li>Taster gedrückt: Low  </li>
+</ul>
+<p>Welche Variante verwendet wird, hängt von der gewünschten Logik und der externen Beschaltung ab.</p>
+<p><img alt="PUPD_W" src="../images/PUPD_W.png" /></p>
+<hr />
+<h2 id="pupdr-register-pull-up-pull-down-einstellen">PUPDR-Register – Pull-Up / Pull-Down einstellen</h2>
+<p>Die internen Pull-Widerstände werden über das <code>GPIOx_PUPDR</code>-Register konfiguriert.</p>
+<p><img alt="PUPD" src="../images/PUPD.png" /></p>
+<p>Für <strong>jeden GPIO-Pin werden zwei Bits verwendet</strong>.<br />
+Die Kombination dieser beiden Bits legt fest, welcher Pull-Widerstand aktiv ist.</p>
+<table>
+<thead>
+<tr>
+<th>Bitkombination</th>
+<th>Bedeutung</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>00</td>
+<td>kein Pull-Widerstand (floating)</td>
+</tr>
+<tr>
+<td>01</td>
+<td>Pull-Up aktiviert</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Pull-Down aktiviert</td>
+</tr>
+<tr>
+<td>11</td>
+<td>reserviert</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="beispiel-gpioa-pin-5-konfigurieren_1">Beispiel: GPIOA Pin 5 konfigurieren</h3>
+<h4 id="pull-down-aktivieren">Pull-Down aktivieren</h4>
+<pre><code class="language-c">GPIOA-&gt;PUPDR |= (1 &lt;&lt; (5 * 2 + 1));   // Bitmuster 10
+</code></pre>
+<p>Erklärung:
+- Das höherwertige Bit wird auf 1 gesetzt
+- Das niederwertige Bit bleibt 0
+- Ergebnis: Pull-Down aktiv</p>
+<hr />
+<h4 id="pull-up-aktivieren">Pull-Up aktivieren</h4>
+<pre><code class="language-c">GPIOA-&gt;PUPDR |= (1 &lt;&lt; (5 * 2));       // Bitmuster 01
+</code></pre>
+<p>Erklärung:
+- Das niederwertige Bit wird auf 1 gesetzt
+- Das höherwertige Bit bleibt 0
+- Ergebnis: Pull-Up aktiv</p>
+<hr />
+<h4 id="pull-widerstand-deaktivieren">Pull-Widerstand deaktivieren</h4>
+<pre><code class="language-c">GPIOA-&gt;PUPDR &amp;= ~(3 &lt;&lt; (5 * 2));      // Bitmuster 00
+</code></pre>
+<p>Erklärung:
+- Beide Bits des Pins werden auf 0 gesetzt
+- Der Pin ist wieder floating</p>
+
+
+</section>
+
+</div> <!-- end of page-inner -->
+</div> <!-- end of page-wrapper -->
+
+</div> <!-- end of body-inner -->
+
+</div> <!-- end of book-body -->
+<script src="../js/main.js"></script>
+<script src="../js/gitbook.min.js"></script>
+<script src="../js/theme.min.js"></script>
+</body>
+</html>
