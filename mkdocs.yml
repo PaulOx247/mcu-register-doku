@@ -1,0 +1,15 @@
+site_name: MCT µC Programmierung
+
+theme:
+  name: gitbook
+  custom_dir: overrides
+
+plugins: []
+
+nav:
+  - Start: index.md
+  - Grundlagen: grundlagen.md
+  - GPIO: gpio.md
+  - SysTick Timer: systick.md
+
+site_url: https://PaulOx247.github.io/mcu-register-doku/

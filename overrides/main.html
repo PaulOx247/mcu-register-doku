@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+  {{ super() }}
+  <style>
+    /* Sidebar Branding entfernen */
+    .book-summary .poweredby,
+    .book-summary .powered-by,
+    .book-summary .copyright,
+    .book-summary-footer,
+    .book-summary .book-summary-footer {
+      display: none !important;
+    }
+  </style>
+{% endblock %}
